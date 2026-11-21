@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>7th Birthday Music Cues</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one phone-width column of program cards; a fixed "deck" at the bottom holds the YouTube player and transport controls. */
+:root {
+  --bg: #f6f4fb; --surface: #ffffff; --ink: #1b1830; --muted: #5d5878; --line: #e2deef;
+  --gold: #8a5d00; --gold-fill: #f3c431; --on-gold: #1b1830; --pink: #b8286f; --pink-soft: #fbe6f0; --violet-soft: #ece8f8; --screen: #000;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #121026; --surface: #1c1936; --ink: #f1eefb; --muted: #a8a3c6; --line: #2e2a52;
+  --gold: #f4c542; --gold-fill: #f4c542; --pink: #ff7ab8; --pink-soft: #3a1d36; --violet-soft: #26223f; color-scheme: dark } }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(20px + env(safe-area-inset-top, 0px)) calc(190px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 18px; }
+#program { display: grid; gap: 18px; }
+
+header h1 { font: 800 clamp(30px, 8vw, 44px)/1.02 var(--display); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+header h1 span { color: var(--gold); }
+header p { margin: 8px 0 0; color: var(--muted); max-width: 60ch; }
+
+.jump { position: sticky; top: 0; z-index: 5; background: var(--bg); display: flex; gap: 6px; overflow-x: auto; padding-block: calc(8px + env(safe-area-inset-top, 0px)) 8px; margin-inline: -4px; padding-inline: 4px; scrollbar-width: none; }
+.jump::-webkit-scrollbar { display: none; }
+.jump a { flex: none; font: 600 12px/1 var(--body); color: var(--ink); text-decoration: none; padding: 8px 11px; border-radius: 999px; background: var(--violet-soft); }
+.jump a.is-done { color: var(--muted); text-decoration: line-through; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+.panel h2 { font: 800 20px/1.15 var(--display); margin: 0; }
+.eyebrow { font: 700 11px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+.levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.levels div { display: flex; gap: 10px; align-items: center; font-size: 13px; }
+.levels b { display: block; font-size: 14px; }
+.fade { background: var(--violet-soft); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0; }
+
+.checks { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.checks label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.checks input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--pink); flex: none; }
+.checks input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.seg { scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 56px); }
+.seg.done { opacity: .55; }
+.seg-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.seg-head > div { min-width: 0; }
+.donebtn { flex: none; font: 600 12px/1 var(--body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.donebtn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+.meter { display: inline-flex; align-items: center; gap: 8px; font: 600 12px/1 var(--body); color: var(--muted); }
+.bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 14px; }
+.bars i { width: 4px; border-radius: 1px; background: var(--line); }
+.bars i:nth-child(1) { height: 5px; } .bars i:nth-child(2) { height: 8px; } .bars i:nth-child(3) { height: 11px; } .bars i:nth-child(4) { height: 14px; }
+.bars i.on { background: var(--pink); }
+
+.cues { display: grid; gap: 8px; }
+.cue-row { display: grid; grid-template-columns: 1fr 44px; gap: 6px; }
+.cue { display: grid; grid-template-columns: 34px auto 1fr; gap: 10px; align-items: center; text-align: left; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 52px; cursor: pointer; width: 100%; }
+.cue:hover { border-color: var(--pink); }
+.cue.playing { border-color: var(--pink); background: var(--pink-soft); }
+.ext { display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 18px; }
+.ext:hover { color: var(--pink); border-color: var(--pink); }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--gold-fill); outline-offset: 2px; }
+.play { width: 34px; height: 34px; border-radius: 50%; background: var(--pink); display: grid; place-items: center; }
+.play svg { width: 13px; height: 13px; fill: var(--surface); margin-left: 2px; }
+.tc { font: 700 17px/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--gold); min-width: 3.2em; }
+.song { min-width: 0; display: grid; }
+.song b { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.song small { color: var(--muted); font-size: 12.5px; }
+.tag { justify-self: start; margin-top: 3px; font: 700 10.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; padding: 4px 6px; border-radius: 5px; background: var(--violet-soft); color: var(--muted); }
+.tag.sugg { background: var(--pink-soft); color: var(--pink); }
+
+.queue { display: inline-flex; align-items: center; gap: 8px; justify-self: start; font: 600 14px/1 var(--body); color: var(--on-gold); background: var(--gold-fill); padding: 11px 16px; border: 0; border-radius: 999px; cursor: pointer; }
+
+.steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.steps li { display: grid; grid-template-columns: minmax(64px, auto) 1fr; gap: 12px; align-items: baseline; }
+.steps .at { font: 700 12.5px/1.3 var(--mono); color: var(--pink); font-variant-numeric: tabular-nums; }
+.steps p { margin: 0; min-width: 0; }
+.note { font-size: 13.5px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; margin: 0; }
+
+.minus { display: grid; gap: 8px; grid-template-columns: 1fr 96px; }
+.minus label { grid-column: 1 / -1; font-weight: 600; font-size: 13px; }
+.minus input { font: 15px var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; width: 100%; min-width: 0; }
+.minus .queue { grid-column: 1 / -1; }
+
+.deck { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgb(0 0 0 / .12);
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.deck-in { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 128px 1fr; grid-template-areas: "screen now" "ctrl ctrl" "hint hint"; gap: 8px 12px; align-items: center; }
+.screen { grid-area: screen; aspect-ratio: 16 / 9; width: 100%; max-width: 100%; border-radius: 8px; overflow: hidden; background: var(--screen); }
+.screen iframe, .screen > div { width: 100%; height: 100%; display: block; border: 0; }
+.now { grid-area: now; min-width: 0; display: grid; gap: 2px; }
+.now b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.time { font: 700 15px/1.2 var(--mono); color: var(--gold); font-variant-numeric: tabular-nums; }
+.ctrl { grid-area: ctrl; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ctrl button { font: 600 14px/1 var(--body); color: var(--ink); background: var(--violet-soft); border: 0; border-radius: 999px; padding: 12px 16px; cursor: pointer; min-height: 44px; }
+.ctrl button:disabled { opacity: .45; cursor: default; }
+.ctrl #btn-play { background: var(--pink); color: var(--surface); min-width: 96px; }
+.vol { display: flex; align-items: center; gap: 8px; flex: 1 1 140px; min-width: 0; font: 600 12px/1 var(--mono); color: var(--muted); }
+.vol input { flex: 1; min-width: 0; accent-color: var(--pink); }
+.hint { grid-area: hint; margin: 0; font-size: 13px; font-weight: 600; color: var(--pink); }
+@media (min-width: 640px) {
+  .deck-in { grid-template-columns: 192px 1fr auto; grid-template-areas: "screen now ctrl" "hint hint hint"; }
+  .ctrl { flex-wrap: nowrap; }
+  .vol { width: 170px; flex: none; }
+}
+.ios .no-ios, :root:not(.ios) .ios-only { display: none !important; }
+
+footer { color: var(--muted); font-size: 13px; text-align: center; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Music cue sheet · 7th birthday</div>
+    <h1>Every cue, <span>to the second</span></h1>
+    <p>Tap a cue and it plays right here from the right second. The bar at the bottom pauses, fades and shows the time. The ↗ button opens the same spot in the YouTube app as a backup.</p>
+  </header>
+
+  <nav class="jump" id="jump" aria-label="Jump to segment"></nav>
+
+  <section class="panel" id="setup">
+    <div class="eyebrow">Before the party</div>
+    <h2>Set up the device</h2>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Volume levels</div>
+    <div class="levels" id="levels"></div>
+    <p class="fade no-ios">The page sets each cue's level by itself. To change a level, move the slider while a cue of that level plays. It remembers the new setting.</p>
+    <p class="fade ios-only"><b>iPhone:</b> the page can't change the volume. Use the levels above as a guide. To fade, press volume-down about twice a second for 5 seconds, then tap Pause. Raise the volume again <b>before</b> the next cue.</p>
+  </section>
+
+  <main id="program"></main>
+
+  <footer>Do one sound check at the venue before guests arrive. <span class="no-ios">Laptop keys: Space = pause or resume, F = fade, N = next song.</span></footer>
+</div>
+
+<div class="deck" id="deck" aria-label="Player">
+  <div class="deck-in">
+    <div class="screen"><div id="yt"></div></div>
+    <div class="now"><span class="eyebrow" id="now-seg">Not playing</span><b id="now-song">Tap a cue to start</b><span class="time" id="now-time">0:00 / 0:00</span></div>
+    <div class="ctrl">
+      <button type="button" id="btn-play" disabled>Pause</button>
+      <button type="button" id="btn-fade" class="no-ios" disabled>Fade out</button>
+      <button type="button" id="btn-next" hidden>Next</button>
+      <label class="vol no-ios" for="vol"><span id="vol-label">Vol</span><input type="range" id="vol" min="0" max="100" value="100"></label>
+    </div>
+    <p class="hint" id="hint" role="status">Loading the player…</p>
+  </div>
+</div>
+
+<script>
+const IOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+document.documentElement.classList.toggle("ios", IOS);
+
+const V = {
+  golden: ["TuzfXgUpboA", "Golden", "HUNTR/X", "3:15"],
+  soda: ["9cZ7Nl3Ynxo", "Soda Pop", "Saja Boys", "2:31"],
+  happy: ["XQG89cwhmJU", "Happy", "Pharrell Williams", "3:53"],
+  tryev: ["c6rP-YP4c5I", "Try Everything", "Shakira", "3:23"],
+  countOn: ["6k8cpUkKK4c", "Count on Me", "Bruno Mars", "3:13"],
+  friend: ["1MPZRcyTrcU", "You've Got a Friend in Me", "Randy Newman", "2:08"],
+  howDone: ["5TCOCqw1A58", "How It's Done", "HUNTR/X", "2:56"],
+  believer: ["0mYBSayCsH0", "I'm a Believer", "Smash Mouth (Shrek)", "3:05"],
+  goodTime: ["H7HmzwI67ec", "Good Time", "Owl City & Carly Rae Jepsen", "3:28"],
+  mashGS: ["CtEp-QCKpdc", "Golden × Soda Pop mashup", "Seohwan Mashups", "3:18"],
+  apt: ["8Ebqe2Dbzls", "APT.", "ROSÉ & Bruno Mars", "2:50"],
+  dance: ["BRbLRizJEDs", "Dance the Night", "Dua Lipa", "2:57"],
+  shake: ["H59xVMF4zxE", "Shake It Off", "Taylor Swift", "3:40"],
+  mashKDH: ["HkKJLGH0dP4", "KPop Demon Hunters 7-song mashup", "geumix", "2:54"],
+  waka: ["czWcyZRAMtk", "Waka Waka", "Shakira", "3:22"],
+  bestDay: ["wutzv7JjX7k", "Best Day of My Life", "American Authors", "3:14"],
+  cantStop: ["YxRothF-QE4", "Can't Stop the Feeling! (Trolls)", "Justin Timberlake", "3:58"],
+  dynamite: ["gdZLi9oWNZg", "Dynamite", "BTS", "3:44"],
+  megamix: ["XOsJQCkNohE", "KPop Demon Hunters Megamix", "geumix", "4:27"],
+  jesus: ["LB9aD8eJGGQ", "Jesus Loves Me (piano)", "Michael Tjanaka", "3:08"],
+  worship: ["fOB73qRVGJs", "Alone With God (worship piano)", "DappyTKeys", "3 hr"],
+  friendPiano: ["szfhlVZmWF0", "You've Got a Friend in Me (Disney Peaceful Piano)", "Disney Music", "2:52"],
+  wislPiano: ["LvyRH_fxNJw", "What It Sounds Like (piano)", "Pianella Piano", "4:18"],
+  disneyPiano: ["YrCjtoq1dS0", "1 hr of calm Disney piano", "Minnz Piano", "54:51"],
+  countInstr: ["O3Lt4-FPuJA", "Count on Me (instrumental)", "Bruno Mars", "3:20"],
+  countPiano: ["9P6YIJYOGCA", "Count on Me (piano)", "Pianella Piano", "3:29"],
+  goldenPiano: ["Wq3Y-C9IkSU", "Golden (piano)", "Pianella Piano", "3:28"],
+  dreams: ["Rr8gOrdrqbw", "A Million Dreams (instrumental)", "The Greatest Showman", "4:30"],
+  drum: ["Ek56AgxwybI", "Drumroll", "Sound effect", "0:05"],
+  poke: ["qIRJXJnwgNY", "Pokémon victory (vs. wild Pokémon)", "Pokémon Red", "0:24"],
+  cheer: ["_Z3ra0CxCE0", "Kids cheering", "Sound effect", "0:06"],
+  buzz: ["o29aVM32yY4", "Wrong buzzer", "Sound effect", "0:06"],
+};
+// Seconds the page jumps over by itself wherever the song plays: APT.'s drinking/smoking verse, Dance the Night's "don't give a damn" lines.
+const SKIP = { apt: [[57.4, 83.7]], dance: [[26.0, 31.0], [68.6, 73.6]] };
+
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem("bday-cues:" + k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("bday-cues:" + k, JSON.stringify(v)); } catch {} },
+};
+
+const LEVELS = {
+  full:   { name: "Full",   phone: "70–80%", bars: 4, use: "Opening, games, special number" },
+  medium: { name: "Medium", phone: "about 50%", bars: 3, use: "Lunch, photos, free time" },
+  bed:    { name: "Bed",    phone: "25–30%", bars: 2, use: "Under someone speaking" },
+  quiet:  { name: "Quiet",  phone: "15–20%", bars: 1, use: "Under the birthday boy's message" },
+};
+const levelVol = Object.assign({ full: 100, medium: 70, bed: 35, quiet: 22 }, store.get("levels", {}));
+
+const CHECKS = [
+  "Open this page in the browser you'll use at the party: Chrome on Android or a laptop, Safari or Chrome on iPhone.",
+  "Sign in to youtube.com in that same browser. That's how your Premium (no ads) reaches this player.",
+  "iPhone only: ads can still slip in because Safari blocks the sign-in. To stop them, turn off Settings → Safari (or Apps → Safari) → Prevent Cross-Site Tracking for the party, and turn it back on after.",
+  "The venue needs internet. Mobile data is fine; the player streams.",
+  "Keep this page open on screen. It keeps the screen awake while music plays. Locking the phone or switching apps stops the music.",
+  "Turn on Do Not Disturb. Calls, alarms and notification sounds play through the speaker.",
+  "Charge the device and speaker to 100%. The screen stays on, so bring a charger or power bank.",
+  "Switch off other Bluetooth audio (earbuds, car, watch). Stay within about 10 m of the speaker.",
+  "Set the device volume to about 80% and do a sound check: play the Opening cue, then a piano cue.",
+  "Backup: download the songs in the YouTube app. If the internet drops, tap ↗ on any cue to open that spot in the app.",
+  "Paste the special number's minus one link in its card below.",
+];
+
+// t = start second. Options: fadeAt (auto-fade starts), fadeLen, jump [at, to], repeat (on end, restart here), sugg (my addition).
+const c = (key, t = 0, tag = "", o = {}) => ({ key, t, tag, ...o });
+
+const PROGRAM = [
+  { id: "opening", title: "Opening", when: "Program starts, host walks up", level: "full",
+    cues: [c("golden", 44, "Main cue", { fadeAt: 88 }), c("golden", 15, "Longer entrance", { fadeAt: 88 })],
+    steps: [["0:44", "Tap the cue as the host gets ready. The build-up starts at 0:46."],
+            ["1:01", "Chorus: “We're goin' up, up, up.” Best moment for the birthday boy's entrance."],
+            ["Host talks", "Tap Fade. If you haven't by 1:28, the page fades it by itself, before the quieter verse."]],
+    note: "Need a longer walk-in? The 0:15 cue adds 30 seconds before the chorus. On iPhone the page shows “Fade now” at 1:28 instead of fading." },
+
+  { id: "prayer", title: "Opening prayer", when: "Right after the host's welcome", level: "bed",
+    cues: [c("jesus", 0, "Main"), c("worship", 0, "Backup")],
+    steps: [["Invite", "Tap the cue when the host invites everyone to pray."],
+            ["Prayer starts", "Tap Fade. It fades to silence and pauses."],
+            ["“Amen”", "Tap Resume. Let it play 15–20 seconds while people sit down."],
+            ["Host talks", "Tap Fade."]],
+    note: "A hymn most kids will recognize even without words. The backup is general worship piano." },
+
+  { id: "family", title: "Message from the family", when: "Each family member takes the mic", level: "bed",
+    cues: [c("friendPiano", 0, "Repeats", { repeat: 0 }), c("wislPiano", 0, "Alternative", { repeat: 0 })],
+    steps: [["First speaker", "Tap the cue. It starts over by itself if the messages run long."],
+            ["Last speaker", "Tap Fade after the last message."]] },
+
+  { id: "special", title: "Special number", when: "Performer's minus one", level: "full", minus: true, cues: [],
+    steps: [["Before", "Ask the performer for the exact song and key. Search YouTube for the title plus “minus one” or “karaoke no vocals”."],
+            ["Before", "Paste the link below. Add the time the music really starts; many uploads open with 5–10 seconds of title screen."],
+            ["Cue", "Tap Play minus one when the performer nods."],
+            ["End", "Let it finish on its own. No sound effect."]] },
+
+  { id: "lunch", title: "Lunch playlist", when: "Whole songs, loops by itself", level: "medium", playlist: true,
+    cues: [c("happy"), c("countOn"), c("soda"), c("friend"), c("tryev"), c("golden"),
+           c("believer", 0, "Suggested", { sugg: true }), c("goodTime", 0, "Suggested", { sugg: true }),
+           c("howDone", 0, "Suggested", { sugg: true }), c("mashGS", 0, "Mashup", { sugg: true })],
+    steps: [["Start", "Tap Play all. 10 tracks, about 31 minutes, then it starts over by itself."],
+            ["Tip", "Tap any song to jump to it. Next skips ahead."]] },
+
+  { id: "winner", title: "Game time: every winner", when: "Use for Game 1 and every game after", level: "full",
+    cues: [c("drum", 0, "“And the winner is…”"), c("poke", 0, "Fades by itself", { fadeAt: 8, fadeLen: 2 }), c("cheer", 0, "Celebration"), c("buzz", 0, "Player out")],
+    steps: [["Build-up", "Drumroll while the host says “and the winner is…”"],
+            ["Name called", "Pokémon victory. It fades by itself at 0:08."],
+            ["Player out", "Wrong buzzer, for musical chairs, boat is sinking and newspaper dance."]] },
+
+  { id: "game2", title: "Game 2 · Stop dance", when: "Freeze dance, live mashup", level: "full",
+    cues: [c("apt", 6, "Round 1"), c("dance", 77, "Round 2"), c("shake", 29, "Round 3"), c("apt", 83, "Round 4"), c("mashKDH", 0, "Bonus round", { sugg: true })],
+    steps: [["Each freeze", "Tap Pause. For the next round, tap the next clip instead of Resume. That's your live mashup."],
+            ["Winner", "Drumroll, then Pokémon victory, then Kids cheering."]],
+    note: "The page skips two parts by itself: APT. 0:57–1:23 (a line about drinking and smoking) and the two “don't give a damn” lines in Dance the Night." },
+
+  { id: "game3", title: "Game 3 · Boat is sinking", when: "Kids walk while music plays", level: "full",
+    cues: [c("soda", 10, "Loops the chorus", { jump: [101, 54] })],
+    steps: [["0:10", "Tap the cue while the kids walk around."],
+            ["“The boat is sinking!”", "Tap Pause. Tap Resume for the next round."],
+            ["Automatic", "At 1:41 the song slows down, so the page jumps back to 0:54. It never runs down."]] },
+
+  { id: "game4", title: "Game 4 · Trip to Jerusalem", when: "Musical chairs", level: "full",
+    cues: [c("apt", 6, "Loops", { repeat: 6 })],
+    steps: [["Each round", "Tap Pause at random. One chair comes out."],
+            ["Automatic", "Skips the 0:57 verse and starts over from 0:06 at the end."]] },
+
+  { id: "game5", title: "Game 5 · Newspaper dance", when: "Couples on a newspaper", level: "full",
+    cues: [c("waka", 44, "Loops", { repeat: 44 })],
+    steps: [["0:44", "Starts at “When you fall, get up.” The chorus hits at 0:48."],
+            ["Each stop", "Tap Pause. Couples fold the newspaper in half."],
+            ["2:11", "Dance break with no singing until 2:30. Good for a longer round."],
+            ["Automatic", "Starts over from 0:44 at the end."]] },
+
+  { id: "game6", title: "Game 6 · Cookie face", when: "Cookie on the forehead, no hands", level: "full",
+    cues: [c("soda", 54, "Loops", { jump: [101, 111.5], repeat: 54 })],
+    steps: [["Go!", "Tap the cue. The chorus lands at 1:01."],
+            ["Automatic", "Skips the slow part at 1:41 and starts over from 0:54 at the end."],
+            ["Winner", "Straight to Pokémon victory."]] },
+
+  { id: "gifts", title: "Seven gifts", when: "Seven people give a gift", level: "bed",
+    cues: [c("disneyPiano", 0, "Never runs out")],
+    steps: [["First gift", "Tap the cue when the first gift-giver is called."],
+            ["Seventh gift", "Tap Fade after the last gift."]] },
+
+  { id: "wishes", title: "Seven wishes", when: "Seven people share a wish", level: "bed",
+    cues: [c("countInstr", 0, "Repeats", { repeat: 0 }), c("countPiano", 0, "Softer option", { repeat: 0 })],
+    steps: [["First wish", "Tap the cue. It starts over by itself if needed."],
+            ["Seventh wish", "Tap Fade after the last wish."]] },
+
+  { id: "celebrant", title: "Birthday boy's message", when: "Mic goes to the celebrant", level: "quiet",
+    cues: [c("goldenPiano", 0, "His theme song")],
+    steps: [["Mic to him", "Tap the cue. It plays at Quiet, softer than the other beds, so his voice carries."],
+            ["“Thank you!”", "Tap Fade and let the applause take over."]] },
+
+  { id: "photos", title: "Family & group photos", when: "Whole songs, loops by itself", level: "medium", playlist: true,
+    cues: [c("golden"), c("bestDay"), c("happy"), c("cantStop")],
+    steps: [["Start", "Tap Play all. 4 songs, about 14 minutes, then it starts over."]] },
+
+  { id: "closing", title: "Closing remarks", when: "Host thanks everyone", level: "bed",
+    cues: [c("dreams", 0, "Builds slowly")],
+    steps: [["Host begins", "Tap the cue. It starts soft and builds."],
+            ["Final thank-you", "Tap Fade, then go straight to Free time."]] },
+
+  { id: "free", title: "Free time & fellowship", when: "Until guests go home", level: "medium", playlist: true,
+    cues: [c("mashGS", 0, "Mashup", { sugg: true }), c("apt"), c("dynamite"), c("cantStop"), c("megamix", 0, "Mashup", { sugg: true }), c("golden")],
+    steps: [["Start", "Tap Play all. 6 tracks, about 22 minutes, then it starts over. Turn it up if the kids start dancing."]],
+    note: "APT. skips the drinking verse by itself here too." },
+];
+
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+const mmss = t => { t = Math.max(0, Math.floor(t || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+const yt = (id, t) => `https://youtu.be/${id}${t ? `?t=${Math.floor(t)}` : ""}`;
+const bars = n => `<span class="bars" aria-hidden="true">${[1, 2, 3, 4].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
+const PLAY = `<span class="play" aria-hidden="true"><svg viewBox="0 0 12 14"><path d="M0 0l12 7-12 7z"/></svg></span>`;
+const $ = id => document.getElementById(id);
+
+/* ---------- page ---------- */
+const renderLevels = () => { $("levels").innerHTML = Object.entries(LEVELS).map(([k, l]) =>
+  `<div>${bars(l.bars)}<span><b>${l.name} · ${IOS ? "phone " + l.phone : levelVol[k] + "%"}</b>${l.use}</span></div>`).join(""); };
+renderLevels();
+
+const checked = store.get("checks", []);
+$("checks").innerHTML = CHECKS.map((txt, i) => (IOS || !txt.startsWith("iPhone only")) ?
+  `<li><label><input type="checkbox" id="chk-${i}" ${checked.includes(i) ? "checked" : ""}><span>${esc(txt)}</span></label></li>` : "").join("");
+$("checks").addEventListener("change", () => {
+  store.set("checks", CHECKS.map((_, i) => i).filter(i => $("chk-" + i)?.checked));
+});
+
+const done = new Set(store.get("done", []));
+$("program").innerHTML = PROGRAM.map((s, idx) => {
+  const lv = LEVELS[s.level];
+  const cues = s.cues.map((q, i) => {
+    const [id, song, artist, len] = V[q.key];
+    return `<div class="cue-row"><button type="button" class="cue" data-seg="${s.id}" data-i="${i}">${PLAY}
+      <span class="tc">${mmss(q.t)}</span>
+      <span class="song"><b>${esc(song)}</b><small>${esc(artist)} · ${len}</small>${q.tag ? `<span class="tag${q.sugg ? " sugg" : ""}">${esc(q.tag)}</span>` : ""}</span></button>
+      <a class="ext" href="${yt(id, q.t)}" target="_blank" rel="noopener" aria-label="Open ${esc(song)} at ${mmss(q.t)} in the YouTube app">↗</a></div>`;
+  }).join("");
+  const all = s.playlist ? `<button type="button" class="queue" data-seg="${s.id}" data-i="0">${PLAY.replace('class="play"', 'class="play" style="width:22px;height:22px"')}Play all ${s.cues.length} · loops</button>` : "";
+  const minus = s.minus ? `<div class="minus"><label for="minus-link">Minus one: YouTube link and start time</label>
+      <input type="text" id="minus-link" placeholder="Paste the YouTube link" autocomplete="off" inputmode="url">
+      <input type="text" id="minus-start" placeholder="0:05" autocomplete="off" aria-label="Start time">
+      <button type="button" class="queue" id="minus-play">${PLAY.replace('class="play"', 'class="play" style="width:22px;height:22px"')}Play minus one</button></div>` : "";
+  const steps = `<ul class="steps">${s.steps.map(([at, txt]) => `<li><span class="at">${esc(at)}</span><p>${esc(txt)}</p></li>`).join("")}</ul>`;
+  return `<section class="panel seg${done.has(s.id) ? " done" : ""}" id="${s.id}">
+    <div class="seg-head"><div><div class="eyebrow">${String(idx + 1).padStart(2, "0")} · ${esc(s.when)}</div><h2>${esc(s.title)}</h2></div>
+      <button class="donebtn" type="button" data-id="${s.id}" aria-pressed="${done.has(s.id)}">${done.has(s.id) ? "Done" : "Mark done"}</button></div>
+    <span class="meter">${bars(lv.bars)}${lv.name}</span>
+    ${all}${cues ? `<div class="cues">${cues}</div>` : ""}${minus}${steps}
+    ${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</section>`;
+}).join("");
+
+const renderJump = () => { $("jump").innerHTML = PROGRAM.map(s =>
+  `<a href="#${s.id}" class="${done.has(s.id) ? "is-done" : ""}">${esc(s.title.replace(/^Game (\d) · .*/, "Game $1").replace(": every winner", ""))}</a>`).join(""); };
+renderJump();
+
+$("program").addEventListener("click", e => {
+  const b = e.target.closest(".donebtn");
+  if (b) {
+    const id = b.dataset.id, on = !done.has(id);
+    on ? done.add(id) : done.delete(id);
+    b.setAttribute("aria-pressed", on); b.textContent = on ? "Done" : "Mark done";
+    $(id).classList.toggle("done", on);
+    store.set("done", [...done]); renderJump();
+    return;
+  }
+  const q = e.target.closest("[data-seg]");
+  if (q) playSeg(q.dataset.seg, +q.dataset.i);
+});
+
+/* ---------- minus one ---------- */
+const parseId = s => (s.match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/)([\w-]{11})/) || [])[1];
+const parseTime = s => { const p = String(s || "").trim().split(":").map(Number); return !s || p.some(isNaN) ? 0 : p.reduce((a, x) => a * 60 + x, 0); };
+$("minus-link").value = store.get("minusLink", "");
+$("minus-start").value = store.get("minusStart", "");
+$("minus-link").addEventListener("input", e => store.set("minusLink", e.target.value));
+$("minus-start").addEventListener("input", e => store.set("minusStart", e.target.value));
+$("minus-play").addEventListener("click", () => {
+  const link = $("minus-link").value, id = parseId(link);
+  if (!id) { hint("Paste a YouTube link in the Special number card first."); return; }
+  const linkT = +(link.match(/[?&]t=(\d+)/) || [])[1] || 0;
+  V.minus = [id, "Minus one", "Special number", ""];
+  start({ seg: PROGRAM.find(s => s.id === "special"), list: [c("minus", parseTime($("minus-start").value) || linkT)], i: 0 });
+});
+
+/* ---------- player ---------- */
+let player = null, ready = false, cur = null, pending = null, fadeTimer = null, fadeFrom = null, flashed = false, lock = null;
+
+function hint(msg) { $("hint").textContent = msg; $("hint").hidden = !msg; }
+
+function playSeg(segId, i) {
+  const seg = PROGRAM.find(s => s.id === segId);
+  start({ seg, list: seg.cues, i, playlist: !!seg.playlist });
+}
+
+function start(next) {
+  cur = next;
+  if (!ready) { pending = startCue; hint("Loading the player…"); return; }
+  startCue();
+}
+
+function startCue() {
+  stopFade(false);
+  const q = cur.list[cur.i];
+  setVol(levelVol[cur.seg.level]);
+  player.loadVideoById({ videoId: V[q.key][0], startSeconds: q.t });
+  flashed = false;
+  hint("");
+  $("now-seg").textContent = cur.seg.title;
+  $("now-song").textContent = V[q.key][1];
+  $("btn-next").hidden = !cur.playlist;
+  document.querySelectorAll(".cue.playing").forEach(el => el.classList.remove("playing"));
+  document.querySelector(`.cue[data-seg="${cur.seg.id}"][data-i="${cur.i}"]`)?.classList.add("playing");
+  setTimeout(() => { if (player.getPlayerState() !== 1 && player.getPlayerState() !== 3) hint("Tap ▶ on the small video once to start. Phones need one tap the first time."); }, 2500);
+}
+
+function setVol(v) {
+  if (IOS || !player) return;
+  player.setVolume(v);
+  $("vol").value = v;
+  $("vol-label").textContent = cur ? LEVELS[cur.seg.level].name : "Vol";
+}
+
+function stopFade(restore) {
+  if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; if (restore && fadeFrom != null) player.setVolume(fadeFrom); }
+}
+
+function fadeOut(sec = 5) {
+  if (!player || !cur) return;
+  if (IOS) { hint("Fade now: press volume-down, then tap Pause."); return; }
+  stopFade(true);
+  fadeFrom = player.getVolume();
+  const steps = Math.round(sec * 10); let n = 0;
+  fadeTimer = setInterval(() => {
+    n++; player.setVolume(Math.round(fadeFrom * (1 - n / steps)));
+    if (n >= steps) { clearInterval(fadeTimer); fadeTimer = null; player.pauseVideo(); player.setVolume(fadeFrom); }
+  }, 100);
+}
+
+function next() { if (cur?.playlist) { cur.i = (cur.i + 1) % cur.list.length; startCue(); } }
+
+function tick() {
+  if (!ready || !cur) return;
+  const t = player.getCurrentTime() || 0;
+  $("now-time").textContent = `${mmss(t)} / ${mmss(player.getDuration())}`;
+  if (player.getPlayerState() !== 1) return;
+  const q = cur.list[cur.i];
+  for (const [a, b] of SKIP[q.key] || []) if (t >= a && t < b) { player.seekTo(b, true); return; }
+  if (q.jump && t >= q.jump[0] && t < q.jump[0] + 3) { player.seekTo(q.jump[1], true); return; }
+  if (q.fadeAt && !flashed && !fadeTimer && t >= q.fadeAt && t < q.fadeAt + 1) { flashed = true; fadeOut(q.fadeLen || 5); }
+}
+
+function onState(e) {
+  const s = e.data;
+  if (s === 1) { hint(""); wake(); }
+  if (s === 0 && cur) {
+    const q = cur.list[cur.i];
+    if (q.repeat != null) { player.seekTo(q.repeat, true); player.playVideo(); }
+    else next();
+  }
+  $("btn-play").textContent = s === 1 || s === 3 ? "Pause" : "Resume";
+  $("btn-play").disabled = $("btn-fade").disabled = !cur;
+}
+
+function onErr(e) {
+  const q = cur && cur.list[cur.i];
+  hint(`${q ? V[q.key][1] : "This video"} won't play here (error ${e.data}). Use its ↗ button to open it in the YouTube app.`);
+  if (cur?.playlist) setTimeout(next, 3000);
+}
+
+async function wake() {
+  try { if (!lock && "wakeLock" in navigator && document.visibilityState === "visible") { lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => { lock = null; }); } } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ready && player.getPlayerState() === 1) wake(); });
+
+$("btn-play").addEventListener("click", () => {
+  if (!cur) return;
+  if (player.getPlayerState() === 1) { stopFade(true); player.pauseVideo(); } else player.playVideo();
+});
+$("btn-fade").addEventListener("click", () => fadeOut(5));
+$("btn-next").addEventListener("click", next);
+$("vol").addEventListener("input", e => {
+  const v = +e.target.value; stopFade(false); player?.setVolume(v);
+  if (cur) { levelVol[cur.seg.level] = v; store.set("levels", levelVol); renderLevels(); }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.code === "Space") { e.preventDefault(); $("btn-play").click(); }
+  else if (e.key === "f" || e.key === "F") fadeOut(5);
+  else if (e.key === "n" || e.key === "N") next();
+});
+
+window.onYouTubeIframeAPIReady = () => {
+  player = new YT.Player("yt", {
+    width: "100%", height: "100%", videoId: V.golden[0],
+    playerVars: { playsinline: 1, rel: 0, start: 44, origin: location.origin },
+    events: {
+      onReady: () => { ready = true; hint(""); if (pending) { const p = pending; pending = null; p(); } },
+      onStateChange: onState, onError: onErr,
+    },
+  });
+  setInterval(tick, 250);
+};
+setTimeout(() => { if (!ready) hint("The player didn't load. Check the internet, or use the ↗ buttons to play in the YouTube app."); }, 10000);
+</script>
+<script src="https://www.youtube.com/iframe_api" async></script>
+</body>
+</html>
