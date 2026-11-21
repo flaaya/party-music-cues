@@ -140,7 +140,7 @@ footer { color: var(--muted); font-size: 13px; text-align: center; }
     <div class="eyebrow">Volume levels</div>
     <div class="levels" id="levels"></div>
     <p class="fade no-ios">The page sets each cue's level by itself. To change a level, move the slider while a cue of that level plays. It remembers the new setting.</p>
-    <p class="fade ios-only"><b>iPhone:</b> the page can't change the volume. Use the levels above as a guide. To fade, press volume-down about twice a second for 5 seconds, then tap Pause. Raise the volume again <b>before</b> the next cue.</p>
+    <p class="fade ios-only"><b>iPhone and iPad:</b> Apple doesn't let a page change the volume, so set it with the volume buttons using the levels above. To fade, tap <b>Fade out</b> and press volume-down while it counts down 5 seconds; the song pauses by itself. Raise the volume again <b>before</b> the next cue.</p>
   </section>
 
   <main id="program"></main>
@@ -154,7 +154,7 @@ footer { color: var(--muted); font-size: 13px; text-align: center; }
     <div class="now"><span class="eyebrow" id="now-seg">Not playing</span><b id="now-song">Tap a cue to start</b><span class="time" id="now-time">0:00 / 0:00</span></div>
     <div class="ctrl">
       <button type="button" id="btn-play" disabled>Pause</button>
-      <button type="button" id="btn-fade" class="no-ios" disabled>Fade out</button>
+      <button type="button" id="btn-fade" disabled>Fade out</button>
       <button type="button" id="btn-next" hidden>Next</button>
       <label class="vol no-ios" for="vol"><span id="vol-label">Vol</span><input type="range" id="vol" min="0" max="100" value="100"></label>
     </div>
@@ -239,7 +239,7 @@ const PROGRAM = [
     steps: [["0:44", "Tap the cue as the host gets ready. The build-up starts at 0:46."],
             ["1:01", "Chorus: “We're goin' up, up, up.” Best moment for the birthday boy's entrance."],
             ["Host talks", "Tap Fade. If you haven't by 1:28, the page fades it by itself, before the quieter verse."]],
-    note: "Need a longer walk-in? The 0:15 cue adds 30 seconds before the chorus. On iPhone the page shows “Fade now” at 1:28 instead of fading." },
+    note: "Need a longer walk-in? The 0:15 cue adds 30 seconds before the chorus. On iPhone and iPad, the Fade countdown starts by itself at 1:28; press volume-down until it pauses." },
 
   { id: "prayer", title: "Opening prayer", when: "Right after the host's welcome", level: "bed",
     cues: [c("jesus", 0, "Main"), c("worship", 0, "Backup")],
@@ -448,13 +448,26 @@ function setVol(v) {
 }
 
 function stopFade(restore) {
-  if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; if (restore && fadeFrom != null) player.setVolume(fadeFrom); }
+  if (!fadeTimer) return;
+  clearInterval(fadeTimer); fadeTimer = null;
+  if (IOS) hint(""); else if (restore && fadeFrom != null) player.setVolume(fadeFrom);
 }
 
 function fadeOut(sec = 5) {
   if (!player || !cur) return;
-  if (IOS) { hint("Fade now: press volume-down, then tap Pause."); return; }
   stopFade(true);
+  if (IOS) {
+    // iPhone/iPad ignore volume changes from a page, so the user turns it down while the page counts down, then the page pauses.
+    let left = Math.round(sec);
+    hint(`Press volume-down now… ${left}`);
+    fadeTimer = setInterval(() => {
+      if (--left > 0) { hint(`Press volume-down now… ${left}`); return; }
+      clearInterval(fadeTimer); fadeTimer = null;
+      player.pauseVideo();
+      hint("Paused. Turn the volume back up before the next cue.");
+    }, 1000);
+    return;
+  }
   fadeFrom = player.getVolume();
   const steps = Math.round(sec * 10); let n = 0;
   fadeTimer = setInterval(() => {
@@ -480,7 +493,7 @@ function tickInner() {
 
 function onState(e) {
   const s = e.data;
-  if (s === 1) { hint(""); wake(); }
+  if (s === 1) { if (!fadeTimer) hint(""); wake(); }
   if (s === 0 && cur) {
     const q = cur.list[cur.i];
     if (q.repeat != null) { player.seekTo(q.repeat, true); player.playVideo(); }
