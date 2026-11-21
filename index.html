@@ -99,7 +99,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .minus { display: grid; gap: 8px; grid-template-columns: 1fr 96px; }
 .minus label { grid-column: 1 / -1; font-weight: 600; font-size: 13px; }
 .minus input { font: 15px var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; width: 100%; min-width: 0; }
-.minus .queue { grid-column: 1 / -1; }
+.minus-status { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
+.minus-status.bad { color: var(--pink); font-weight: 600; }
+.minus-actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.minus-app { font: 600 14px/1 var(--body); color: var(--ink); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; }
 
 .deck { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgb(0 0 0 / .12);
   padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
@@ -270,7 +273,7 @@ const PROGRAM = [
 
   { id: "special", title: "Special number", when: "Performer's minus one", level: "full", minus: true, cues: [],
     steps: [["Before", "Ask the performer for the exact song and key. Search YouTube for the title plus “minus one” or “karaoke no vocals”."],
-            ["Before", "Paste the link below. Add the time the music really starts; many uploads open with 5–10 seconds of title screen."],
+            ["Before", "Paste the link below and check it says “plays in this page”. Add the time the music really starts; many uploads open with 5–10 seconds of title screen."],
             ["Cue", "Tap Play minus one when the performer nods."],
             ["End", "Let it finish on its own. No sound effect."]] },
 
@@ -380,7 +383,9 @@ $("program").innerHTML = PROGRAM.map((s, idx) => {
   const minus = s.minus ? `<div class="minus"><label for="minus-link">Minus one: YouTube link and start time</label>
       <input type="text" id="minus-link" placeholder="Paste the YouTube link" autocomplete="off" inputmode="url">
       <input type="text" id="minus-start" placeholder="0:05" autocomplete="off" aria-label="Start time">
-      <button type="button" class="queue" id="minus-play">${PLAY.replace('class="play"', 'class="play" style="width:22px;height:22px"')}Play minus one</button></div>` : "";
+      <p class="minus-status" id="minus-status" role="status"></p>
+      <div class="minus-actions"><button type="button" class="queue" id="minus-play">${PLAY.replace('class="play"', 'class="play" style="width:22px;height:22px"')}Play minus one</button>
+      <a class="minus-app" id="minus-app" hidden target="_blank" rel="noopener">↗ Open in YouTube app</a></div></div>` : "";
   const sfx = s.sfx ? `<div class="sfx"><span class="eyebrow">Game sounds</span><div class="sfx-grid">${SFX_LABEL.map((label, i) =>
     `<button type="button" class="sfx-btn" data-seg="${s.id}" data-sfx="${i}">${esc(label)}</button>`).join("")}</div></div>` : "";
   const steps = `<ul class="steps">${s.steps.map(([at, txt]) => `<li><span class="at">${esc(at)}</span><p>${esc(txt)}</p></li>`).join("")}</ul>`;
@@ -415,16 +420,38 @@ $("program").addEventListener("click", e => {
 /* ---------- minus one ---------- */
 const parseId = s => (s.match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/)([\w-]{11})/) || [])[1];
 const parseTime = s => { const p = String(s || "").trim().split(":").map(Number); return !s || p.some(isNaN) ? 0 : p.reduce((a, x) => a * 60 + x, 0); };
+const minusStart = () => parseTime($("minus-start").value) || +($("minus-link").value.match(/[?&]t=(\d+)/) || [])[1] || 0;
+function updateMinusApp() {
+  const id = parseId($("minus-link").value);
+  $("minus-app").hidden = !id;
+  if (id) $("minus-app").href = yt(id, minusStart());
+}
+// Asks YouTube whether the pasted upload allows playing on other sites; many karaoke channels block it.
+let minusCheck = 0;
+async function checkMinus() {
+  updateMinusApp();
+  const link = $("minus-link").value, id = parseId(link), st = $("minus-status"), n = ++minusCheck;
+  const say = (msg, bad) => { st.textContent = msg; st.classList.toggle("bad", !!bad); };
+  if (!id) { say(link.trim() ? "That doesn't look like a YouTube link." : "", true); return; }
+  say("Checking the video…");
+  try {
+    const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent("https://www.youtube.com/watch?v=" + id)}`);
+    if (n !== minusCheck) return;
+    if (r.ok) say(`✓ “${(await r.json()).title}” plays in this page.`);
+    else if (r.status === 401 || r.status === 403) say("✗ This upload blocks other websites, so it can't play here. Pick another upload of the same minus one, or use Open in YouTube app.", true);
+    else say("✗ YouTube can't find that video. Check the link.", true);
+  } catch { if (n === minusCheck) say(""); }
+}
 $("minus-link").value = store.get("minusLink", "");
 $("minus-start").value = store.get("minusStart", "");
-$("minus-link").addEventListener("input", e => store.set("minusLink", e.target.value));
-$("minus-start").addEventListener("input", e => store.set("minusStart", e.target.value));
+$("minus-link").addEventListener("input", e => { store.set("minusLink", e.target.value); checkMinus(); });
+$("minus-start").addEventListener("input", e => { store.set("minusStart", e.target.value); updateMinusApp(); });
+if ($("minus-link").value) checkMinus();
 $("minus-play").addEventListener("click", () => {
-  const link = $("minus-link").value, id = parseId(link);
+  const id = parseId($("minus-link").value);
   if (!id) { hint("Paste a YouTube link in the Special number card first."); return; }
-  const linkT = +(link.match(/[?&]t=(\d+)/) || [])[1] || 0;
   V.minus = [id, "Minus one", "Special number", ""];
-  start({ seg: PROGRAM.find(s => s.id === "special"), list: [c("minus", parseTime($("minus-start").value) || linkT)], i: 0 });
+  start({ seg: PROGRAM.find(s => s.id === "special"), list: [c("minus", minusStart())], i: 0 });
 });
 
 /* ---------- player ---------- */
