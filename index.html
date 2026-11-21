@@ -135,7 +135,7 @@ footer { color: var(--muted); font-size: 13px; text-align: center; }
   <header>
     <div class="eyebrow">Music cue sheet · 7th birthday</div>
     <h1>Every cue, <span>to the second</span></h1>
-    <p>Tap a cue and it plays right here from the right second. The bar at the bottom pauses, fades and shows the time. The ↗ button opens the same spot in the YouTube app as a backup.</p>
+    <p>Tap a cue and it plays right here from the right second. The bar at the bottom pauses, fades in and out, and shows the time. The ↗ button opens the same spot in the YouTube app as a backup.</p>
   </header>
 
   <nav class="jump" id="jump" aria-label="Jump to segment"></nav>
@@ -149,13 +149,13 @@ footer { color: var(--muted); font-size: 13px; text-align: center; }
   <section class="panel">
     <div class="eyebrow">Volume levels</div>
     <div class="levels" id="levels"></div>
-    <p class="fade no-ios">The page sets each cue's level by itself. To change a level, move the slider while a cue of that level plays. It remembers the new setting.</p>
+    <p class="fade no-ios">The page sets each cue's level by itself. Soft cues fade in over 3 seconds, playlist songs fade into each other, and games start at full right away. When the music is paused, the Fade button becomes <b>Fade in</b>. To change a level, move the slider while a cue of that level plays; it remembers.</p>
     <p class="fade ios-only"><b>iPhone and iPad:</b> Apple doesn't let a page change the volume, so set it with the volume buttons using the levels above. To fade, tap <b>Fade out</b> and press volume-down while it counts down 5 seconds; the song pauses by itself. Raise the volume again <b>before</b> the next cue.</p>
   </section>
 
   <main id="program"></main>
 
-  <footer>Do one sound check at the venue before guests arrive. <span class="no-ios">Laptop keys: Space = pause or resume, F = fade, N = next song.</span></footer>
+  <footer>Do one sound check at the venue before guests arrive. <span class="no-ios">Laptop keys: Space = pause or resume, F = fade in or out, N = next song.</span></footer>
 </div>
 
 <div class="deck" id="deck" aria-label="Player">
@@ -225,6 +225,8 @@ const LEVELS = {
   quiet:  { name: "Quiet",  phone: "15–20%", bars: 1, use: "Under the birthday boy's message" },
 };
 const levelVol = Object.assign({ full: 100, medium: 70, bed: 35, quiet: 22 }, store.get("levels", {}));
+// Seconds each level fades in when a cue starts. Full stays instant so games and the opening hit hard.
+const FADE_IN = { full: 0, medium: 2, bed: 3, quiet: 3 };
 
 const CHECKS = [
   "Open this page in the browser you'll use at the party: Chrome on Android or a laptop, Safari or Chrome on iPhone.",
@@ -262,7 +264,7 @@ const PROGRAM = [
     cues: [c("jesus", 0, "Main"), c("worship", 0, "Backup")],
     steps: [["Invite", "Tap the cue when the host invites everyone to pray."],
             ["Prayer starts", "Tap Fade. It fades to silence and pauses."],
-            ["“Amen”", "Tap Resume. Let it play 15–20 seconds while people sit down."],
+            ["“Amen”", "Tap Fade in (on iPhone, Resume). Let it play 15–20 seconds while people sit down."],
             ["Host talks", "Tap Fade."]],
     note: "A hymn most kids will recognize even without words. The backup is general worship piano." },
 
@@ -455,7 +457,7 @@ $("minus-play").addEventListener("click", () => {
 });
 
 /* ---------- player ---------- */
-let back = null, player = null, ready = false, cur = null, pending = null, fadeTimer = null, fadeFrom = null, flashed = false, lock = null;
+let back = null, player = null, ready = false, cur = null, pending = null, fadeTimer = null, fadeRestore = null, fadeInNext = 0, flashed = false, endFaded = false, lock = null;
 
 function hint(msg) { $("hint").textContent = msg; $("hint").hidden = !msg; }
 
@@ -477,8 +479,10 @@ function startCue() {
   stopFade(false);
   const q = cur.list[cur.i];
   setVol(levelVol[cur.seg.level]);
+  fadeInNext = IOS ? 0 : FADE_IN[cur.seg.level];
+  if (fadeInNext) player.setVolume(0);
   player.loadVideoById({ videoId: V[q.key][0], startSeconds: q.t });
-  flashed = false;
+  flashed = endFaded = false;
   hint("");
   showNow();
   setTimeout(() => { try { if (![1, 3].includes(player.getPlayerState())) hint("Not playing? Tap ▶ on the small video once; phones need one tap the first time. If an ad is showing, sign in to YouTube in this browser."); } catch {} }, 2500);
@@ -513,10 +517,27 @@ function setVol(v) {
 function stopFade(restore) {
   if (!fadeTimer) return;
   clearInterval(fadeTimer); fadeTimer = null;
-  if (IOS) hint(""); else if (restore && fadeFrom != null) player.setVolume(fadeFrom);
+  if (IOS) hint(""); else if (restore && fadeRestore != null) player.setVolume(fadeRestore);
 }
 
-function fadeOut(sec = 5) {
+// Steps the player volume from one value to another (iPhone/iPad ignore this, so callers skip it there).
+function ramp(from, to, sec, done) {
+  const steps = Math.max(1, Math.round(sec * 10)); let n = 0;
+  player.setVolume(from);
+  fadeTimer = setInterval(() => {
+    n++; player.setVolume(Math.round(from + (to - from) * n / steps));
+    if (n >= steps) { clearInterval(fadeTimer); fadeTimer = null; if (done) done(); }
+  }, 100);
+}
+
+function fadeIn(sec) {
+  if (IOS || !player || !cur) return;
+  stopFade(false);
+  fadeRestore = levelVol[cur.seg.level];
+  ramp(0, fadeRestore, sec);
+}
+
+function fadeOut(sec = 5, then) {
   if (!player || !cur) return;
   stopFade(true);
   if (IOS) {
@@ -531,12 +552,15 @@ function fadeOut(sec = 5) {
     }, 1000);
     return;
   }
-  fadeFrom = player.getVolume();
-  const steps = Math.round(sec * 10); let n = 0;
-  fadeTimer = setInterval(() => {
-    n++; player.setVolume(Math.round(fadeFrom * (1 - n / steps)));
-    if (n >= steps) { clearInterval(fadeTimer); fadeTimer = null; player.pauseVideo(); player.setVolume(fadeFrom); }
-  }, 100);
+  const from = fadeRestore = player.getVolume();
+  ramp(from, 0, sec, () => { if (then) then(); else { player.pauseVideo(); player.setVolume(from); } });
+}
+
+// The Fade button: fades out while playing, fades back in while paused.
+function fadeToggle() {
+  if (!cur || !ready) return;
+  if ([1, 3].includes(player.getPlayerState())) fadeOut(5);
+  else if (!IOS) { stopFade(false); player.setVolume(0); fadeInNext = 3; player.playVideo(); }
 }
 
 function next() { if (cur?.playlist) { cur.i = (cur.i + 1) % cur.list.length; startCue(); } }
@@ -552,19 +576,29 @@ function tickInner() {
   for (const [a, b] of SKIP[q.key] || []) if (t >= a && t < b) { player.seekTo(b, true); return; }
   if (q.jump && t >= q.jump[0] && t < q.jump[0] + 3) { player.seekTo(q.jump[1], true); return; }
   if (q.fadeAt && !flashed && !fadeTimer && t >= q.fadeAt && t < q.fadeAt + 1) { flashed = true; fadeOut(q.fadeLen || 5); }
+  // Playlists: fade each song out over its last seconds, then the next one fades in.
+  const d = player.getDuration();
+  if (cur.playlist && !IOS && !endFaded && !fadeTimer && d > 10 && t >= d - 4) { endFaded = true; fadeOut(3.5, next); }
 }
 
 function onState(e) {
   const s = e.data;
-  if (s === 1) { if (!fadeTimer) hint(""); wake(); }
+  if (s === 1) {
+    if (!fadeTimer) hint("");
+    wake();
+    if (fadeInNext) { const sec = fadeInNext; fadeInNext = 0; fadeIn(sec); }
+  }
   if (s === 0 && cur) {
     const q = cur.list[cur.i];
     if (back && SFX_KEYS.has(q.key)) returnToSong();
     else if (q.repeat != null) { player.seekTo(q.repeat, true); player.playVideo(); }
     else next();
   }
-  $("btn-play").textContent = s === 1 || s === 3 ? "Pause" : "Resume";
-  $("btn-play").disabled = $("btn-fade").disabled = !cur;
+  const playing = s === 1 || s === 3;
+  $("btn-play").textContent = playing ? "Pause" : "Resume";
+  $("btn-fade").textContent = playing || IOS ? "Fade out" : "Fade in";
+  $("btn-play").disabled = !cur;
+  $("btn-fade").disabled = !cur || (IOS && !playing);
 }
 
 function onErr(e) {
@@ -582,7 +616,7 @@ $("btn-play").addEventListener("click", () => {
   if (!cur) return;
   if (player.getPlayerState() === 1) { stopFade(true); player.pauseVideo(); } else player.playVideo();
 });
-$("btn-fade").addEventListener("click", () => fadeOut(5));
+$("btn-fade").addEventListener("click", fadeToggle);
 $("btn-next").addEventListener("click", next);
 $("vol").addEventListener("input", e => {
   const v = +e.target.value; stopFade(false); player?.setVolume(v);
@@ -591,7 +625,7 @@ $("vol").addEventListener("input", e => {
 document.addEventListener("keydown", e => {
   if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.code === "Space") { e.preventDefault(); $("btn-play").click(); }
-  else if (e.key === "f" || e.key === "F") fadeOut(5);
+  else if (e.key === "f" || e.key === "F") fadeToggle();
   else if (e.key === "n" || e.key === "N") next();
 });
 
