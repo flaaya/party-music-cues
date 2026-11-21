@@ -81,6 +81,13 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .tag { justify-self: start; margin-top: 3px; font: 700 10.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; padding: 4px 6px; border-radius: 5px; background: var(--violet-soft); color: var(--muted); }
 .tag.sugg { background: var(--pink-soft); color: var(--pink); }
 
+.sfx { display: grid; gap: 6px; }
+.sfx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+@media (max-width: 420px) { .sfx-grid { grid-template-columns: repeat(2, 1fr); } }
+.sfx-btn { font: 600 13px/1.2 var(--body); color: var(--ink); background: var(--violet-soft); border: 1px solid transparent; border-radius: 10px; padding: 12px 8px; min-height: 44px; cursor: pointer; }
+.sfx-btn:hover { border-color: var(--pink); }
+.sfx-btn.playing { border-color: var(--pink); background: var(--pink-soft); }
+
 .queue { display: inline-flex; align-items: center; gap: 8px; justify-self: start; font: 600 14px/1 var(--body); color: var(--on-gold); background: var(--gold-fill); padding: 11px 16px; border: 0; border-radius: 999px; cursor: pointer; }
 
 .steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -233,6 +240,13 @@ const CHECKS = [
 // t = start second. Options: fadeAt (auto-fade starts), fadeLen, jump [at, to], repeat (on end, restart here), sugg (my addition).
 const c = (key, t = 0, tag = "", o = {}) => ({ key, t, tag, ...o });
 
+// Game sounds, shared by the Game time card and every game card. When one ends, the paused game song comes back.
+const SFX = [c("drum", 0, "“And the winner is…”"), c("poke", 0, "Fades by itself", { fadeAt: 8, fadeLen: 2 }), c("cheer", 0, "Celebration"), c("buzz", 0, "Player out")];
+const SFX_LABEL = ["Drumroll", "Pokémon win", "Kids cheer", "Buzzer"];
+const SFX_KEYS = new Set(SFX.map(q => q.key));
+const OUT = ["Player out", "Tap Buzzer. The song waits where you paused; tap Resume for the next round."];
+const WIN = ["Winner", "Drumroll, then Pokémon win, then Kids cheer."];
+
 const PROGRAM = [
   { id: "opening", title: "Opening", when: "Program starts, host walks up", level: "full",
     cues: [c("golden", 44, "Main cue", { fadeAt: 88 }), c("golden", 15, "Longer entrance", { fadeAt: 88 })],
@@ -267,41 +281,41 @@ const PROGRAM = [
     steps: [["Start", "Tap Play all. 10 tracks, about 31 minutes, then it starts over by itself."],
             ["Tip", "Tap any song to jump to it. Next skips ahead."]] },
 
-  { id: "winner", title: "Game time: every winner", when: "Use for Game 1 and every game after", level: "full",
-    cues: [c("drum", 0, "“And the winner is…”"), c("poke", 0, "Fades by itself", { fadeAt: 8, fadeLen: 2 }), c("cheer", 0, "Celebration"), c("buzz", 0, "Player out")],
+  { id: "winner", title: "Game time: every winner", when: "Game 1; the same sounds are in every game card", level: "full",
+    cues: SFX,
     steps: [["Build-up", "Drumroll while the host says “and the winner is…”"],
             ["Name called", "Pokémon victory. It fades by itself at 0:08."],
             ["Player out", "Wrong buzzer, for musical chairs, boat is sinking and newspaper dance."]] },
 
-  { id: "game2", title: "Game 2 · Stop dance", when: "Freeze dance, live mashup", level: "full",
+  { id: "game2", title: "Game 2 · Stop dance", when: "Freeze dance, live mashup", level: "full", sfx: true,
     cues: [c("apt", 6, "Round 1"), c("dance", 77, "Round 2"), c("shake", 29, "Round 3"), c("apt", 83, "Round 4"), c("mashKDH", 0, "Bonus round", { sugg: true })],
     steps: [["Each freeze", "Tap Pause. For the next round, tap the next clip instead of Resume. That's your live mashup."],
-            ["Winner", "Drumroll, then Pokémon victory, then Kids cheering."]],
+            WIN],
     note: "The page skips two parts by itself: APT. 0:57–1:23 (a line about drinking and smoking) and the two “don't give a damn” lines in Dance the Night." },
 
-  { id: "game3", title: "Game 3 · Boat is sinking", when: "Kids walk while music plays", level: "full",
+  { id: "game3", title: "Game 3 · Boat is sinking", when: "Kids walk while music plays", level: "full", sfx: true,
     cues: [c("soda", 10, "Loops the chorus", { jump: [101, 54] })],
     steps: [["0:10", "Tap the cue while the kids walk around."],
             ["“The boat is sinking!”", "Tap Pause. Tap Resume for the next round."],
-            ["Automatic", "At 1:41 the song slows down, so the page jumps back to 0:54. It never runs down."]] },
+            ["Automatic", "At 1:41 the song slows down, so the page jumps back to 0:54. It never runs down."], OUT, WIN] },
 
-  { id: "game4", title: "Game 4 · Trip to Jerusalem", when: "Musical chairs", level: "full",
+  { id: "game4", title: "Game 4 · Trip to Jerusalem", when: "Musical chairs", level: "full", sfx: true,
     cues: [c("apt", 6, "Loops", { repeat: 6 })],
     steps: [["Each round", "Tap Pause at random. One chair comes out."],
-            ["Automatic", "Skips the 0:57 verse and starts over from 0:06 at the end."]] },
+            ["Automatic", "Skips the 0:57 verse and starts over from 0:06 at the end."], OUT, WIN] },
 
-  { id: "game5", title: "Game 5 · Newspaper dance", when: "Couples on a newspaper", level: "full",
+  { id: "game5", title: "Game 5 · Newspaper dance", when: "Couples on a newspaper", level: "full", sfx: true,
     cues: [c("waka", 44, "Loops", { repeat: 44 })],
     steps: [["0:44", "Starts at “When you fall, get up.” The chorus hits at 0:48."],
             ["Each stop", "Tap Pause. Couples fold the newspaper in half."],
             ["2:11", "Dance break with no singing until 2:30. Good for a longer round."],
-            ["Automatic", "Starts over from 0:44 at the end."]] },
+            ["Automatic", "Starts over from 0:44 at the end."], OUT, WIN] },
 
-  { id: "game6", title: "Game 6 · Cookie face", when: "Cookie on the forehead, no hands", level: "full",
+  { id: "game6", title: "Game 6 · Cookie face", when: "Cookie on the forehead, no hands", level: "full", sfx: true,
     cues: [c("soda", 54, "Loops", { jump: [101, 111.5], repeat: 54 })],
     steps: [["Go!", "Tap the cue. The chorus lands at 1:01."],
             ["Automatic", "Skips the slow part at 1:41 and starts over from 0:54 at the end."],
-            ["Winner", "Straight to Pokémon victory."]] },
+            ["Winner", "Straight to Pokémon win, then Kids cheer."]] },
 
   { id: "gifts", title: "Seven gifts", when: "Seven people give a gift", level: "bed",
     cues: [c("disneyPiano", 0, "Never runs out")],
@@ -367,12 +381,14 @@ $("program").innerHTML = PROGRAM.map((s, idx) => {
       <input type="text" id="minus-link" placeholder="Paste the YouTube link" autocomplete="off" inputmode="url">
       <input type="text" id="minus-start" placeholder="0:05" autocomplete="off" aria-label="Start time">
       <button type="button" class="queue" id="minus-play">${PLAY.replace('class="play"', 'class="play" style="width:22px;height:22px"')}Play minus one</button></div>` : "";
+  const sfx = s.sfx ? `<div class="sfx"><span class="eyebrow">Game sounds</span><div class="sfx-grid">${SFX_LABEL.map((label, i) =>
+    `<button type="button" class="sfx-btn" data-seg="${s.id}" data-sfx="${i}">${esc(label)}</button>`).join("")}</div></div>` : "";
   const steps = `<ul class="steps">${s.steps.map(([at, txt]) => `<li><span class="at">${esc(at)}</span><p>${esc(txt)}</p></li>`).join("")}</ul>`;
   return `<section class="panel seg${done.has(s.id) ? " done" : ""}" id="${s.id}">
     <div class="seg-head"><div><div class="eyebrow">${String(idx + 1).padStart(2, "0")} · ${esc(s.when)}</div><h2>${esc(s.title)}</h2></div>
       <button class="donebtn" type="button" data-id="${s.id}" aria-pressed="${done.has(s.id)}">${done.has(s.id) ? "Done" : "Mark done"}</button></div>
     <span class="meter">${bars(lv.bars)}${lv.name}</span>
-    ${all}${cues ? `<div class="cues">${cues}</div>` : ""}${minus}${steps}
+    ${all}${cues ? `<div class="cues">${cues}</div>` : ""}${sfx}${minus}${steps}
     ${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</section>`;
 }).join("");
 
@@ -391,7 +407,9 @@ $("program").addEventListener("click", e => {
     return;
   }
   const q = e.target.closest("[data-seg]");
-  if (q) playSeg(q.dataset.seg, +q.dataset.i);
+  if (!q) return;
+  if (q.dataset.sfx != null) start({ seg: PROGRAM.find(s => s.id === q.dataset.seg), list: SFX, i: +q.dataset.sfx });
+  else playSeg(q.dataset.seg, +q.dataset.i);
 });
 
 /* ---------- minus one ---------- */
@@ -410,7 +428,7 @@ $("minus-play").addEventListener("click", () => {
 });
 
 /* ---------- player ---------- */
-let player = null, ready = false, cur = null, pending = null, fadeTimer = null, fadeFrom = null, flashed = false, lock = null;
+let back = null, player = null, ready = false, cur = null, pending = null, fadeTimer = null, fadeFrom = null, flashed = false, lock = null;
 
 function hint(msg) { $("hint").textContent = msg; $("hint").hidden = !msg; }
 
@@ -420,6 +438,9 @@ function playSeg(segId, i) {
 }
 
 function start(next) {
+  // Remember the game song's spot when a sound effect interrupts it.
+  if (!SFX_KEYS.has(next.list[next.i].key)) back = null;
+  else if (cur && ready && !SFX_KEYS.has(cur.list[cur.i].key)) back = { cur, t: player.getCurrentTime() || 0 };
   cur = next;
   if (!ready) { pending = startCue; hint("Loading the player…"); return; }
   startCue();
@@ -432,12 +453,27 @@ function startCue() {
   player.loadVideoById({ videoId: V[q.key][0], startSeconds: q.t });
   flashed = false;
   hint("");
+  showNow();
+  setTimeout(() => { try { if (![1, 3].includes(player.getPlayerState())) hint("Not playing? Tap ▶ on the small video once; phones need one tap the first time. If an ad is showing, sign in to YouTube in this browser."); } catch {} }, 2500);
+}
+
+function showNow() {
+  const q = cur.list[cur.i];
   $("now-seg").textContent = cur.seg.title;
   $("now-song").textContent = V[q.key][1];
   $("btn-next").hidden = !cur.playlist;
-  document.querySelectorAll(".cue.playing").forEach(el => el.classList.remove("playing"));
-  document.querySelector(`.cue[data-seg="${cur.seg.id}"][data-i="${cur.i}"]`)?.classList.add("playing");
-  setTimeout(() => { try { if (![1, 3].includes(player.getPlayerState())) hint("Not playing? Tap ▶ on the small video once; phones need one tap the first time. If an ad is showing, sign in to YouTube in this browser."); } catch {} }, 2500);
+  document.querySelectorAll(".playing").forEach(el => el.classList.remove("playing"));
+  const sel = cur.list === SFX && cur.seg.sfx ? `.sfx-btn[data-seg="${cur.seg.id}"][data-sfx="${cur.i}"]` : `.cue[data-seg="${cur.seg.id}"][data-i="${cur.i}"]`;
+  document.querySelector(sel)?.classList.add("playing");
+}
+
+function returnToSong() {
+  const b = back; back = null; cur = b.cur;
+  const q = cur.list[cur.i];
+  setVol(levelVol[cur.seg.level]);
+  player.cueVideoById({ videoId: V[q.key][0], startSeconds: b.t });
+  showNow();
+  hint(`${V[q.key][1]} is ready at ${mmss(b.t)}. Tap Resume for the next round.`);
 }
 
 function setVol(v) {
@@ -496,7 +532,8 @@ function onState(e) {
   if (s === 1) { if (!fadeTimer) hint(""); wake(); }
   if (s === 0 && cur) {
     const q = cur.list[cur.i];
-    if (q.repeat != null) { player.seekTo(q.repeat, true); player.playVideo(); }
+    if (back && SFX_KEYS.has(q.key)) returnToSong();
+    else if (q.repeat != null) { player.seekTo(q.repeat, true); player.playVideo(); }
     else next();
   }
   $("btn-play").textContent = s === 1 || s === 3 ? "Pause" : "Resume";
